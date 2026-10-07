@@ -1,8 +1,19 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<base target="_top">
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Kratos' GymTracker</title>
+<meta name="description" content="Trainingserfassung für Kratos & Atreus.">
+<meta name="theme-color" content="#0a0b0c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GymTracker">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -77,7 +88,7 @@
 
   /* ───────── Header ───────── */
   header.top {
-    position: sticky; top: 0; z-index: 20; padding: 14px 16px 12px;
+    position: sticky; top: 0; z-index: 20; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
     background: linear-gradient(to bottom, rgba(10,11,12,.96) 70%, rgba(10,11,12,.0));
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
@@ -278,7 +289,7 @@
   #rest.fertig .rbtn { background: rgba(0,0,0,.12); border-color: rgba(0,0,0,.15); color: var(--accent-ink); }
 
   /* ───────── Toast ───────── */
-  #toast { position: fixed; left: 50%; top: 14px; z-index: 60; transform: translate(-50%, -150%); max-width: calc(100% - 32px);
+  #toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); z-index: 60; transform: translate(-50%, -150%); max-width: calc(100% - 32px);
     padding: 11px 16px; border-radius: 14px; background: var(--panel-3); border: 1px solid var(--line-2); font-size: 14px;
     font-weight: 500; box-shadow: 0 10px 30px rgba(0,0,0,.5); transition: transform .4s var(--spring); }
   #toast.zeigen { transform: translate(-50%, 0); }
@@ -392,6 +403,34 @@
   .session-hist .mini.top { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 
   .lade-hinweis { opacity: .55; transition: opacity .3s; }
+
+
+  /* ───────── Geräteverwaltung ───────── */
+  .btn-verwalten { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 18px; padding: 14px;
+    border-radius: 14px; border: 1px dashed var(--line-2); background: none; color: var(--muted); font-weight: 600; font-size: 14px;
+    transition: color .2s, border-color .2s, transform .12s; }
+  .btn-verwalten:active { transform: scale(.98); color: var(--accent); border-color: var(--accent); }
+  #verwaltung { position: fixed; inset: 0; z-index: 64; background: var(--bg); overflow-y: auto; animation: slideInR .3s var(--ease);
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(40px + var(--safe-b)); }
+  #verwaltung .inner { max-width: 640px; margin: 0 auto; }
+  #verwaltung h2 { font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: 24px; text-transform: uppercase; margin: 14px 0 4px; }
+  .vw-zeile { display: flex; align-items: center; gap: 12px; padding: 12px 6px 12px 14px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; margin-bottom: 8px; }
+  .vw-zeile.inaktiv { opacity: .5; }
+  .vw-zeile .vw-main { flex: 1; min-width: 0; border: 0; background: none; text-align: left; padding: 0; }
+  .vw-zeile .vw-name { display: block; font-weight: 700; }
+  .vw-zeile .vw-meta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .schalter { position: relative; width: 48px; height: 28px; flex: none; border-radius: 99px; border: 0; background: var(--panel-3); transition: background .2s; }
+  .schalter::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff;
+    transition: transform .25s var(--spring); }
+  .schalter.an { background: var(--accent); }
+  .schalter.an::after { transform: translateX(20px); }
+  .formular { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .formular label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .formular label.breit { grid-column: 1 / -1; }
+  .formular input, .formular select { padding: 13px 12px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text);
+    font: 600 16px var(--f-body); text-transform: none; letter-spacing: 0; appearance: none; -webkit-appearance: none; }
+  .formular .sheet-btns { grid-column: 1 / -1; margin-top: 6px; }
 
   @media (min-width: 420px) { .big-num { font-size: 84px; } }
   @media (max-width: 360px) {
@@ -572,12 +611,14 @@
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-  // ───────────────────────── Konfiguration aus dem Server-Template ─────────────────────────
-  const PERSONEN = <?!= JSON.stringify(personen) ?>;
-  const PERSON_AUS_URL = <?!= JSON.stringify(personAusUrl) ?>;
-  const GRUPPEN_FARBEN = <?!= JSON.stringify(gruppenFarben) ?>;
-  const GRUPPEN_REIHE = <?!= JSON.stringify(gruppenReihe) ?>;
-  let aktuellePerson = <?!= JSON.stringify(startPerson) ?>;
+  // ───────────────────────── Konfiguration ─────────────────────────
+  // Personen müssen zu PERSONEN in functions/api/[[route]].js passen.
+  const PERSONEN = ['Kratos', 'Atreus'];
+  const GRUPPEN_FARBEN = { Beine: '#ffc53d', Torso: '#4fd1c5', Arme: '#f472b6', Cardio: '#8a949c', Sonstiges: '#5b6570' };
+  const GRUPPEN_REIHE = ['Beine', 'Torso', 'Arme', 'Cardio', 'Sonstiges'];
+  const URL_PERSON = new URLSearchParams(location.search).get('person');
+  const PERSON_AUS_URL = PERSONEN.indexOf(URL_PERSON) >= 0;
+  let aktuellePerson = PERSON_AUS_URL ? URL_PERSON : PERSONEN[0];
 
   // ───────────────────────── Helfer ─────────────────────────
   const $ = id => document.getElementById(id);
@@ -600,12 +641,17 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
 
-  function rufe(fn, ...args) {
-    return new Promise((resolve, reject) => {
-      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](...args);
+  // API-Aufruf. Status 400 = ungültige Eingabe (nicht wiederholen), alles andere gilt als Verbindungsproblem.
+  async function api(pfad, body) {
+    const res = await fetch('/api/' + pfad, body === undefined ? { cache: 'no-store' } : {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     });
+    const daten = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    if (!res.ok) { const e = new Error(daten.error || `HTTP ${res.status}`); e.ungueltig = res.status === 400; throw e; }
+    return daten;
   }
-  const istValidierungsfehler = e => /Ungültig/.test((e && e.message) || String(e));
+  const q = encodeURIComponent;
+  const istValidierungsfehler = e => !!(e && e.ungueltig);
 
   function neuAnimieren(el, klasse) { el.classList.remove(klasse); void el.offsetWidth; el.classList.add(klasse); }
 
@@ -735,7 +781,7 @@
   function ladeDaten() {
     const nr = ++anfrageNr;
     const person = aktuellePerson;
-    return rufe('getInitData', person).then(d => {
+    return api(`init?person=${q(person)}`).then(d => {
       if (person === aktuellePerson) uebernehmeDaten(d, nr); else { cache[d.person] = d; }
     }).catch(e => {
       if (!daten) zeigeLadefehler(e);
@@ -774,14 +820,14 @@
         const s = queue[0];
         const nr = ++anfrageNr;
         try {
-          const d = await rufe('logSet', s.person, s.uebung, s.gewicht, s.wdh, { id: s.id, ts: s.ts });
+          const d = await api('log', { person: s.person, uebung: s.uebung, gewicht: s.gewicht, wdh: s.wdh, id: s.id, ts: s.ts });
           queue = queue.filter(x => x.id !== s.id); speichereQueue();
           offline = false;
           uebernehmeDaten(d, nr);
         } catch (e) {
           if (istValidierungsfehler(e)) {
             queue = queue.filter(x => x.id !== s.id); speichereQueue();
-            toast('Satz verworfen: ' + String(e.message || e).replace(/^.*Ungültig:\s*/, ''), 'fehler');
+            toast('Satz verworfen: ' + String(e.message || e).replace(/^Ungültig:\s*/, ''), 'fehler');
             renderAktuell();
             continue;
           }
@@ -873,7 +919,9 @@
   function renderListe() {
     const el = $('liste');
     if (!daten.uebungen.length) {
-      el.innerHTML = `<div class="leerzustand"><span class="gross">🏋️</span>Keine aktiven Geräte.<br>Im Sheet „Uebungen" bei „Aktiv" ein Häkchen setzen.</div>`;
+      el.innerHTML = `<div class="leerzustand"><span class="gross">🏋️</span>Noch keine aktiven Geräte.
+        <br><button class="btn primaer" style="padding:0 22px" id="btnVerwalten">Geräte anlegen</button></div>`;
+      $('btnVerwalten').onclick = oeffneVerwaltung;
       return;
     }
     const proUebung = {};
@@ -898,8 +946,9 @@
           ${n ? `<span class="g-badge num">✓ ${n}</span>` : '<span class="g-chev">&#8250;</span>'}</button>`;
       });
     });
-    el.innerHTML = html;
+    el.innerHTML = html + '<button class="btn-verwalten" id="btnVerwalten">⚙ Geräte verwalten</button>';
     el.querySelectorAll('.geraet').forEach(b => b.onclick = () => { vib(6); oeffneUebung(b.dataset.u); });
+    $('btnVerwalten').onclick = oeffneVerwaltung;
   }
 
   // ───────────────────────── Erfassung ─────────────────────────
@@ -1037,10 +1086,13 @@
   });
 
   // Satz loggen — sofortiges Feedback, Server im Hintergrund.
-  let erfolgTimer;
+  let erfolgTimer, letzterSatzMs = 0;
   $('speichern').onclick = () => {
     const u = aktuelleUebung;
     if (!u) return;
+    // Doppel-Tipp-Schutz: kein Satz ist in unter 1,5 Sekunden erledigt.
+    if (Date.now() - letzterSatzMs < 1500) return;
+    letzterSatzMs = Date.now();
     const btn = $('speichern');
     const istMin = u.einheit === 'min';
     if (istMin && !(gewicht > 0)) { toast('Dauer muss größer als 0 sein', 'fehler'); return; }
@@ -1105,7 +1157,7 @@
     row.classList.add('weg');
     btn.disabled = true;
     const nr = ++anfrageNr;
-    rufe('deleteSet', aktuellePerson, { row: s.row, id: s.id, ms: s.ms, uebung: s.uebung, gewicht: s.gewicht, wdh: s.wdh })
+    api('delete', { person: aktuellePerson, id: s.dbId })
       .then(d => { uebernehmeDaten(d, nr); toast('Satz gelöscht'); })
       .catch(e => { toast('Löschen fehlgeschlagen: ' + (e.message || e), 'fehler'); renderErfassungListen(); });
   }
@@ -1200,7 +1252,7 @@
   function ladeUebersicht() {
     const nr = ++uebersichtNr, person = aktuellePerson;
     $('statUebersicht').classList.add('lade-hinweis');
-    rufe('getUebersicht', person).then(u => {
+    api(`uebersicht?person=${q(person)}`).then(u => {
       if (nr !== uebersichtNr || person !== aktuellePerson) return;
       $('statUebersicht').classList.remove('lade-hinweis');
       zeichneUebersicht(u);
@@ -1348,7 +1400,7 @@
     $('chartVolumenTitel').textContent = istMin ? 'Minuten pro Training' : 'Volumen pro Training';
     const nr = ++verlaufNr, person = aktuellePerson;
     $('statDetails').classList.add('lade-hinweis');
-    rufe('getVerlauf', person, name).then(rows => {
+    api(`verlauf?person=${q(person)}&uebung=${q(name)}`).then(rows => {
       if (nr !== verlaufNr || person !== aktuellePerson) return;
       $('statDetails').classList.remove('lade-hinweis');
       zeichneVerlauf(rows, istMin);
@@ -1424,12 +1476,88 @@
     }).join('') : '<div class="pr-leer">Noch keine Trainings an diesem Gerät.</div>';
   }
 
+
+  // ───────────────────────── Geräteverwaltung ─────────────────────────
+  async function oeffneVerwaltung() {
+    vib(6);
+    const el = document.createElement('div');
+    el.id = 'verwaltung';
+    el.innerHTML = `<div class="inner"><button class="btn-ghost" id="vwZu">&#8249; Zurück</button>
+      <h2>Geräte</h2><div style="color:var(--muted);font-size:13px">Antippen zum Bearbeiten · Schalter blendet ein Gerät aus, der Verlauf bleibt erhalten.</div>
+      <button class="btn primaer" style="width:100%;margin:16px 0 4px" id="vwNeu">+ Neues Gerät</button>
+      <div id="vwListe"><div class="skeleton"></div><div class="skeleton"></div></div></div>`;
+    document.body.appendChild(el);
+    $('vwZu').onclick = () => { el.remove(); ladeDaten().catch(() => {}); };
+    $('vwNeu').onclick = () => bearbeiteGeraet(null);
+    try { renderVerwaltung(await api('uebungen')); }
+    catch (e) { $('vwListe').innerHTML = `<div class="pr-leer">Konnte Geräte nicht laden: ${esc(e.message || e)}</div>`; }
+  }
+
+  let alleGeraete = [];
+  function renderVerwaltung(liste) {
+    alleGeraete = liste;
+    const box = $('vwListe');
+    if (!box) return;
+    box.innerHTML = GRUPPEN_REIHE.map(g => {
+      const l = liste.filter(u => u.gruppe === g);
+      if (!l.length) return '';
+      return `<div class="gruppe-titel"><span class="dot" style="background:${GRUPPEN_FARBEN[g]}"></span><span class="label">${esc(g)}</span></div>` +
+        l.map(u => `<div class="vw-zeile${u.aktiv ? '' : ' inaktiv'}">
+          <button class="vw-main" data-n="${esc(u.name)}"><span class="vw-name">${esc(u.name)}</span>
+            <span class="vw-meta num">Schritt ${fmt(u.schritt)} ${u.einheit} · Start ${fmt(u.start)} ${u.einheit}</span></button>
+          <button class="schalter${u.aktiv ? ' an' : ''}" data-n="${esc(u.name)}" aria-label="${esc(u.name)} aktiv"></button></div>`).join('');
+    }).join('') || '<div class="pr-leer">Noch keine Geräte angelegt.</div>';
+    box.querySelectorAll('.vw-main').forEach(b => b.onclick = () => bearbeiteGeraet(alleGeraete.find(u => u.name === b.dataset.n)));
+    box.querySelectorAll('.schalter').forEach(b => b.onclick = async () => {
+      const u = alleGeraete.find(x => x.name === b.dataset.n);
+      vib(8);
+      b.classList.toggle('an');
+      try { renderVerwaltung(await api('uebungen', { ...u, alterName: u.name, aktiv: !u.aktiv })); }
+      catch (e) { b.classList.toggle('an'); toast(e.message || String(e), 'fehler'); }
+    });
+  }
+
+  function bearbeiteGeraet(u) {
+    const neu = !u;
+    u = u || { name: '', schritt: 5, start: 20, aktiv: true, einheit: 'kg', gruppe: 'Torso' };
+    const sheet = document.createElement('div');
+    sheet.id = 'sheet';
+    sheet.style.zIndex = 66;
+    sheet.innerHTML = `<div class="sheet-karte"><div class="label">${neu ? 'Neues Gerät' : 'Gerät bearbeiten'}</div>
+      <form class="formular" id="geraetForm">
+        <label class="breit">Name<input name="name" required maxlength="60" value="${esc(u.name)}" autocomplete="off"></label>
+        <label>Muskelgruppe<select name="gruppe">${GRUPPEN_REIHE.map(g => `<option${g === u.gruppe ? ' selected' : ''}>${g}</option>`).join('')}</select></label>
+        <label>Einheit<select name="einheit"><option value="kg"${u.einheit === 'kg' ? ' selected' : ''}>kg × Wdh</option><option value="min"${u.einheit === 'min' ? ' selected' : ''}>Minuten</option></select></label>
+        <label>Schritt<input name="schritt" inputmode="decimal" value="${String(u.schritt).replace('.', ',')}"></label>
+        <label>Startwert<input name="start" inputmode="decimal" value="${String(u.start).replace('.', ',')}"></label>
+        ${neu ? '' : '<div class="breit" style="grid-column:1/-1;font-size:12px;color:var(--dim)">Beim Umbenennen wandert der bisherige Verlauf mit.</div>'}
+        <div class="sheet-btns"><button type="button" class="btn" id="gfAbbr">Abbrechen</button><button class="btn primaer">Speichern</button></div>
+      </form></div>`;
+    document.body.appendChild(sheet);
+    const zu = () => sheet.remove();
+    sheet.addEventListener('click', e => { if (e.target === sheet) zu(); });
+    $('gfAbbr').onclick = zu;
+    $('geraetForm').onsubmit = async ev => {
+      ev.preventDefault();
+      const f = new FormData(ev.target);
+      const zahl = k => Number(String(f.get(k)).replace(',', '.'));
+      const daten = { name: String(f.get('name')).trim(), gruppe: f.get('gruppe'), einheit: f.get('einheit'),
+        schritt: zahl('schritt'), start: zahl('start'), aktiv: u.aktiv, alterName: neu ? undefined : u.name };
+      try {
+        renderVerwaltung(await api('uebungen', daten));
+        vib(12); zu(); toast(neu ? 'Gerät angelegt' : 'Gespeichert');
+      } catch (e) { toast(String(e.message || e).replace(/^Ungültig:\s*/, ''), 'fehler'); }
+    };
+    if (neu) setTimeout(() => sheet.querySelector('input[name=name]').focus(), 50);
+  }
+
   // ───────────────────────── Start ─────────────────────────
   baueSwitcher();
   if (daten) renderTraining();     // sofort aus dem Cache, dann frisch vom Server
   renderSync();
   ladeDaten().then(() => { if (queue.length) flush(); }).catch(() => { if (queue.length) flush(); });
   setInterval(() => { if (ansicht === 'training' && daten) renderSession(); }, 60000);  // Session-Dauer aktuell halten
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});  // App auch offline starten
 </script>
 </body>
 </html>
