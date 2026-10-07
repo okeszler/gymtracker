@@ -2,7 +2,7 @@
 
 Trainings-Log für Kratos & Atreus: Sätze erfassen, Pausen-Timer, Rekorde, Fortschritt.
 
-**Live:** https://gymtracker-86y.pages.dev (`?person=Atreus` an die URL hängen für Vorauswahl)
+**Live:** https://olivers-gymtracker.pages.dev (`?person=Atreus` an die URL hängen für Vorauswahl)
 
 Cloudflare Pages + Pages Functions + D1, wie die anderen Apps. Jeder Push auf `main` wird automatisch
 deployt, andere Branches bekommen eine Vorschau-URL.
