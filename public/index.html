@@ -204,6 +204,7 @@
   #tipp .tipp-ico { font-size: 18px; }
   #tipp .tipp-text { flex: 1; line-height: 1.35; }
   #tipp .tipp-go { font-weight: 800; color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+  #tipp.leise { background: var(--panel); border-color: var(--line); color: var(--muted); cursor: default; }
 
   .lift { margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px 14px 14px; }
   .metric + .metric { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line-2); }
@@ -404,6 +405,47 @@
 
   .lade-hinweis { opacity: .55; transition: opacity .3s; }
 
+
+
+  /* ───────── Training abschließen ───────── */
+  .btn-fertig { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 4px); margin: 14px 0 0 4px;
+    height: 46px; border-radius: 12px; border: 1px solid rgba(255,197,61,.35); background: rgba(255,197,61,.08); color: var(--accent);
+    font-family: var(--f-display); font-stretch: 100%; font-weight: 800; font-size: 14px; letter-spacing: .08em; text-transform: uppercase;
+    transition: transform .12s, background .2s; }
+  .btn-fertig:active { transform: scale(.97); background: rgba(255,197,61,.18); }
+  .session.abgeschlossen { border-color: rgba(95,224,138,.35); background: linear-gradient(140deg, #12201a 0%, var(--panel) 55%); }
+  .session.abgeschlossen::before { background: var(--green); }
+  .session.abgeschlossen .live { background: var(--green); animation: none; }
+  .session.abgeschlossen .btn-fertig { color: var(--green); border-color: rgba(95,224,138,.35); background: rgba(95,224,138,.08); }
+
+  #fazit { position: fixed; inset: 0; z-index: 68; overflow-y: auto; background: var(--bg);
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 16px calc(28px + var(--safe-b)); animation: fadeUp .4s var(--ease) both; }
+  #fazit .inner { max-width: 640px; margin: 0 auto; }
+  .fazit-kopf { position: relative; overflow: hidden; text-align: center; padding: 28px 16px 22px; border-radius: 22px; margin-bottom: 12px;
+    background: radial-gradient(120% 90% at 50% 0%, rgba(255,197,61,.22), transparent 65%), var(--panel); border: 1px solid rgba(255,197,61,.3); }
+  .fazit-kopf::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 5px;
+    background: repeating-linear-gradient(-45deg, var(--accent) 0 8px, #000 8px 16px); background-size: 40px 100%; animation: stripes 1.2s linear infinite; }
+  .fazit-kopf .medaille { font-size: 54px; display: inline-block; animation: trophy .8s var(--spring) both; }
+  .fazit-kopf h2 { font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: 26px; line-height: 1.05;
+    text-transform: uppercase; margin: 8px 0 6px; }
+  .fazit-kopf h2 span { color: var(--accent); }
+  .fazit-kopf p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .fazit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .fazit-grid .kz { animation-delay: var(--d, 0ms); }
+  .delta { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+  .delta.plus { color: var(--green); background: rgba(95,224,138,.12); }
+  .delta.minus { color: var(--red); background: rgba(255,75,62,.12); }
+  .delta.gleich { color: var(--muted); background: var(--panel-2); }
+  .fazit-geraet { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); animation: fadeUp .35s var(--ease) both; }
+  .fazit-geraet:last-child { border-bottom: 0; padding-bottom: 0; }
+  .fazit-geraet .fg-main { flex: 1; min-width: 0; }
+  .fazit-geraet .fg-name { font-weight: 700; font-size: 15px; }
+  .fazit-geraet .fg-saetze { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .fazit-geraet .fg-pfeil { font-family: var(--f-display); font-stretch: 100%; font-weight: 900; font-size: 13px; white-space: nowrap; }
+  .fazit-geraet .fg-pfeil.plus { color: var(--green); }
+  .fazit-geraet .fg-pfeil.minus { color: var(--red); }
+  .fazit-geraet .fg-pfeil.gleich { color: var(--dim); }
+  .fazit-geraet .fg-pfeil.pr { color: var(--accent); }
 
   /* ───────── Geräteverwaltung ───────── */
   .btn-verwalten { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 18px; padding: 14px;
@@ -698,6 +740,7 @@
   let statSub = 'uebersicht';
   let aktuelleUebung = null;
   let gewicht = 0, wdh = 10;
+  let comeback = null;                           // { tage, normal, leicht, prozent } beim Wiedereinstieg
   const charts = {};
   let anfrageNr = 0, angewendetNr = 0;           // gegen veraltete Antworten
 
@@ -905,16 +948,24 @@
     }
     const geraete = new Set(saetze.map(s => s.uebung)).size;
     const volumen = saetze.reduce((sum, s) => sum + (einheitVon(s.uebung) === 'kg' ? s.gewicht * s.wdh : 0), 0);
-    const minuten = Math.max(1, Math.round((Date.now() - saetze[0].ms) / 60000));
+    const ende = istAbgeschlossen(saetze) ? saetze[saetze.length - 1].ms : Date.now();
+    const minuten = Math.max(1, Math.round((ende - saetze[0].ms) / 60000));
     const dauer = minuten >= 60 ? `${Math.floor(minuten / 60)} h ${pad(minuten % 60)} min` : `${minuten} min`;
-    el.innerHTML = `<div class="session">
-      <div class="session-head"><span class="live"></span><span class="label">Heute</span><span class="dauer num">seit ${saetze[0].zeit} · ${dauer}</span></div>
+    const fertig = istAbgeschlossen(saetze);
+    el.innerHTML = `<div class="session${fertig ? ' abgeschlossen' : ''}">
+      <div class="session-head"><span class="live"></span><span class="label">${fertig ? 'Heute · abgeschlossen' : 'Heute'}</span><span class="dauer num">seit ${saetze[0].zeit} · ${dauer}</span></div>
       <div class="session-stats">
         <div><b class="num">${geraete}</b><span>Geräte</span></div>
         <div><b class="num">${saetze.length}</b><span>Sätze</span></div>
         <div><b class="num">${fmtVol(volumen)}</b><span>Volumen</span></div>
-      </div></div>`;
+      </div>
+      <button class="btn-fertig" id="btnFertig">${fertig ? '✓ Zusammenfassung ansehen' : '🏁 Training abschließen'}</button></div>`;
+    $('btnFertig').onclick = zeigeFazit;
   }
+
+  // Abgeschlossen = beim Abschluss gab es genau so viele Sätze wie jetzt (ein neuer Satz öffnet das Training wieder).
+  const fertigKey = () => 'gt_fertig_' + aktuellePerson;
+  const istAbgeschlossen = saetze => { const f = store.get(fertigKey()); return !!f && f.tag === lokalerTag(new Date()) && f.saetze === saetze.length; };
 
   function renderListe() {
     const el = $('liste');
@@ -962,6 +1013,17 @@
     gewicht = basis ? basis.gewicht : u.start;
     wdh = istMin ? 1 : (basis ? basis.wdh : 10);
 
+    // Comeback: nach langer Pause automatisch leichter einsteigen (3+ Wochen −10 %, 6+ Wochen −20 %).
+    comeback = null;
+    const pause = !heuteU.length && u.letztes ? tageZwischen(u.letztes.tag, daten.heuteTag) : 0;
+    if (!istMin && pause >= 21 && gewicht > 0) {
+      const anteil = pause >= 42 ? .2 : .1;
+      const schritte = Math.max(1, Math.round(gewicht * anteil / u.schritt));
+      const leicht = Math.max(0, Math.round((gewicht - schritte * u.schritt) * 100) / 100);
+      comeback = { tage: pause, normal: gewicht, leicht, prozent: Math.round(anteil * 100) };
+      gewicht = leicht;
+    }
+
     $('erfName').textContent = u.name;
     $('erfGruppe').innerHTML = `<i style="background:${GRUPPEN_FARBEN[u.gruppe]}"></i>${esc(u.gruppe)}`;
     $('gewichtLabel').textContent = istMin ? 'Dauer' : 'Gewicht';
@@ -991,17 +1053,44 @@
     const liste = u.vorher.saetze.map(x => satzText(x, u.einheit)).join(' · ');
     info.innerHTML = `Letztes Training <b>${tagKurz(u.vorher.tag)}</b>: ${esc(liste)}${istMin ? '' : ' kg'}`;
 
-    // Doppelte Progression: alle Sätze mit dem Top-Gewicht ≥ 12 Wdh → Gewicht erhöhen.
     if (istMin) return;
-    const top = Math.max(...u.vorher.saetze.map(x => x.gewicht));
-    const topSaetze = u.vorher.saetze.filter(x => x.gewicht === top);
-    const schonHoeher = heuteSaetze().some(x => x.uebung === u.name && x.gewicht > top);
-    if (top > 0 && topSaetze.every(x => x.wdh >= 12) && !schonHoeher) {
-      const ziel = Math.round((top + u.schritt) * 100) / 100;
-      tipp.innerHTML = `<span class="tipp-ico">📈</span><span class="tipp-text">Letztes Mal alle Sätze mit ${fmt(top)} kg ≥ 12 Wdh geschafft. Zeit für mehr!</span><span class="tipp-go num">${fmt(ziel)} kg ›</span>`;
-      tipp.onclick = () => { vib(10); const alt = gewicht; gewicht = ziel; wdh = Math.min(wdh, 10); aktualisiereAnzeige(ziel > alt ? 1 : -1); };
-      tipp.classList.remove('hidden');
+    const heuteHier = heuteSaetze().filter(x => x.uebung === u.name);
+    tipp.classList.remove('leise');
+
+    // Comeback hat Vorrang: nach langer Pause nicht gleich steigern.
+    if (comeback && !heuteHier.length) {
+      zeigeTipp('🛡️', `${comeback.tage} Tage Pause an diesem Gerät — Comeback mit ${comeback.prozent} % weniger. Schont Gelenke und Sehnen.`,
+        `${fmt(comeback.normal)} kg nehmen ›`, () => { const alt = gewicht; gewicht = comeback.normal; aktualisiereAnzeige(gewicht > alt ? 1 : -1, 'g'); tipp.classList.add('hidden'); });
+      return;
     }
+
+    // Steigerung: zweimal in Folge mind. 2 Sätze mit dem Top-Gewicht, alle auf Ziel-Wiederholungen → mehr Gewicht.
+    const ziel = u.zielWdh || 10;
+    const sauber = sess => {
+      if (!sess) return null;
+      const top = Math.max(...sess.saetze.map(x => x.gewicht));
+      const topSaetze = sess.saetze.filter(x => x.gewicht === top);
+      return top > 0 && topSaetze.length >= 2 && topSaetze.every(x => x.wdh >= ziel) ? { top, n: topSaetze.length } : null;
+    };
+    // Nur aus aktuellen Trainings ableiten: nach über 3 Wochen Pause zählt das alte Niveau nicht mehr.
+    if (tageZwischen(u.vorher.tag, daten.heuteTag) > 21) return;
+    const s1 = sauber(u.vorher), s2 = sauber(u.davor);
+    if (!s1 || heuteHier.some(x => x.gewicht > s1.top)) return;
+    if (s2 && s2.top === s1.top) {
+      const neu = Math.round((s1.top + u.schritt) * 100) / 100;
+      zeigeTipp('📈', `Zweimal in Folge ${s1.n} × ${ziel} mit ${fmt(s1.top)} kg geschafft. Zeit für mehr!`,
+        `${fmt(neu)} kg ›`, () => { const alt = gewicht; gewicht = neu; aktualisiereAnzeige(neu > alt ? 1 : -1, 'g'); });
+    } else {
+      zeigeTipp('🎯', `Schaffst du heute wieder ${s1.n} × ${ziel} mit ${fmt(s1.top)} kg, ist nächstes Mal mehr drin.`);
+      tipp.classList.add('leise');
+    }
+  }
+
+  function zeigeTipp(ico, text, aktionText, aktion) {
+    const tipp = $('tipp');
+    tipp.innerHTML = `<span class="tipp-ico">${ico}</span><span class="tipp-text">${esc(text)}</span>${aktionText ? `<span class="tipp-go num">${esc(aktionText)}</span>` : ''}`;
+    tipp.onclick = aktion ? () => { vib(10); aktion(); } : null;
+    tipp.classList.remove('hidden');
   }
 
   function aendereGewicht(faktor) {
@@ -1477,6 +1566,84 @@
   }
 
 
+
+  // ───────────────────────── Training abschließen ─────────────────────────
+  function kompakt(saetze, einheit) {
+    if (einheit === 'min') return saetze.map(x => `${fmt(x.gewicht)} min`).join(' · ');
+    const gleich = saetze.every(x => x.gewicht === saetze[0].gewicht && x.wdh === saetze[0].wdh);
+    return gleich ? `${saetze.length} × ${saetze[0].wdh} · ${fmt(saetze[0].gewicht)} kg` : saetze.map(x => `${fmt(x.gewicht)}×${x.wdh}`).join(' · ') + ' kg';
+  }
+
+  function zeigeFazit() {
+    const saetze = heuteSaetze();
+    if (!saetze.length) return;
+    vib([20, 60, 40]);
+    stopPause();
+    store.set(fertigKey(), { tag: lokalerTag(new Date()), saetze: saetze.length });
+
+    const minuten = Math.max(1, Math.round((saetze[saetze.length - 1].ms - saetze[0].ms) / 60000));
+    const volumen = Math.round(saetze.reduce((sum, x) => sum + (einheitVon(x.uebung) === 'kg' ? x.gewicht * x.wdh : 0), 0));
+    const cardio = Math.round(saetze.reduce((sum, x) => sum + (einheitVon(x.uebung) === 'min' ? x.gewicht : 0), 0));
+    const vorher = daten.letztesTraining;
+
+    // Pro Gerät: heutige Sätze, Vergleich zum letzten Mal, Rekord?
+    const reihenfolge = [];
+    const proGeraet = {};
+    saetze.forEach(x => { if (!proGeraet[x.uebung]) { proGeraet[x.uebung] = []; reihenfolge.push(x.uebung); } proGeraet[x.uebung].push(x); });
+    let rekorde = 0;
+    const zeilen = reihenfolge.map((name, i) => {
+      const u = daten.uebungen.find(x => x.name === name) || { einheit: einheitVon(name), best: 0 };
+      const liste = proGeraet[name];
+      const top = Math.max(...liste.map(x => x.gewicht));
+      let pfeil = '', klasse = 'gleich';
+      if (u.best > 0 && top > u.best) { pfeil = '🏆 Rekord'; klasse = 'pr'; rekorde++; }
+      else if (u.vorher) {
+        const d = Math.round((top - Math.max(...u.vorher.saetze.map(x => x.gewicht))) * 100) / 100;
+        const nachPause = tageZwischen(u.vorher.tag, daten.heuteTag) > 21;   // leichter nach Pause ist gewollt
+        pfeil = d > 0 ? `▲ +${fmt(d)}` : d < 0 ? `▼ ${fmt(d)}${nachPause ? ' · Comeback' : ''}` : '= gleich';
+        klasse = d > 0 ? 'plus' : d < 0 && !nachPause ? 'minus' : 'gleich';
+      } else { pfeil = 'neu'; }
+      return `<div class="fazit-geraet" style="animation-delay:${300 + i * 60}ms"><div class="fg-main"><div class="fg-name">${esc(name)}</div>
+        <div class="fg-saetze num">${esc(kompakt(liste, u.einheit))}</div></div><span class="fg-pfeil ${klasse}">${pfeil}</span></div>`;
+    }).join('');
+
+    const delta = (jetzt, alt, neutral) => {
+      if (!vorher || !alt) return '';
+      const p = Math.round((jetzt - alt) / alt * 100);
+      const klasse = neutral || p === 0 ? 'gleich' : p > 0 ? 'plus' : 'minus';
+      return `<span class="delta ${klasse}">${p > 0 ? '+' : ''}${p} %</span>`;
+    };
+    const pause = vorher ? tageZwischen(vorher.tag, daten.heuteTag) : 0;
+    let text;
+    if (pause >= 21) text = `Erstes Training nach ${pause} Tagen — stark, dass du zurück bist!`;
+    else if (rekorde) text = `${rekorde} ${rekorde === 1 ? 'neuer Rekord' : 'neue Rekorde'} heute. Das ist Fortschritt.`;
+    else if (vorher && volumen > vorher.volumen) text = `Mehr bewegt als beim letzten Mal (${tagKurz(vorher.tag)}).`;
+    else text = 'Wieder ein Training im Kasten. Dranbleiben zahlt sich aus.';
+
+    const el = document.createElement('div');
+    el.id = 'fazit';
+    el.innerHTML = `<div class="inner">
+      <div class="fazit-kopf"><span class="medaille">${rekorde ? '🏆' : '🏅'}</span>
+        <h2>Starkes Training, <span>${esc(aktuellePerson)}</span>!</h2><p>${esc(text)}</p></div>
+      <div class="fazit-grid">
+        <div class="kz highlight" style="--d:60ms"><div class="kz-wert num" id="fzVol">0</div><div class="label">Volumen</div>${delta(volumen, vorher && vorher.volumen)}</div>
+        <div class="kz" style="--d:120ms"><div class="kz-wert num" id="fzMin">0</div><div class="label">Dauer</div>${delta(minuten, vorher && vorher.minuten, true)}</div>
+        <div class="kz" style="--d:180ms"><div class="kz-wert num" id="fzSaetze">0</div><div class="label">Sätze</div>${delta(saetze.length, vorher && vorher.saetze)}</div>
+        <div class="kz" style="--d:240ms"><div class="kz-wert num" id="fzGeraete">0</div><div class="label">${cardio ? `Geräte · ${cardio} min Cardio` : 'Geräte'}</div></div>
+      </div>
+      <div class="karte" style="animation-delay:280ms"><div class="karte-kopf"><span class="label">Deine Geräte heute</span>
+        <span class="meta">${vorher ? 'vs. ' + tagKurz(vorher.tag) : ''}</span></div>${zeilen}</div>
+      ${queue.length ? `<div class="pr-leer">⚡ ${queue.length} ${queue.length === 1 ? 'Satz wird' : 'Sätze werden'} noch synchronisiert.</div>` : ''}
+      <button class="btn primaer" style="width:100%;margin-top:8px" id="fzZu">Fertig</button>
+    </div>`;
+    document.body.appendChild(el);
+    zaehle($('fzVol'), volumen, v => fmtVol(v).replace(/ (kg|t)$/, '<small>$1</small>'));
+    zaehle($('fzMin'), minuten, v => `${Math.round(v)}<small>min</small>`);
+    zaehle($('fzSaetze'), saetze.length);
+    zaehle($('fzGeraete'), reihenfolge.length);
+    $('fzZu').onclick = () => { vib(8); el.remove(); if (ansicht !== 'training') zeigeAnsicht('training', 'zurueck'); else renderSession(); };
+  }
+
   // ───────────────────────── Geräteverwaltung ─────────────────────────
   async function oeffneVerwaltung() {
     vib(6);
@@ -1504,7 +1671,7 @@
       return `<div class="gruppe-titel"><span class="dot" style="background:${GRUPPEN_FARBEN[g]}"></span><span class="label">${esc(g)}</span></div>` +
         l.map(u => `<div class="vw-zeile${u.aktiv ? '' : ' inaktiv'}">
           <button class="vw-main" data-n="${esc(u.name)}"><span class="vw-name">${esc(u.name)}</span>
-            <span class="vw-meta num">Schritt ${fmt(u.schritt)} ${u.einheit} · Start ${fmt(u.start)} ${u.einheit}</span></button>
+            <span class="vw-meta num">Schritt ${fmt(u.schritt)} ${u.einheit} · Start ${fmt(u.start)} ${u.einheit}${u.einheit === 'kg' ? ` · Ziel ${u.zielWdh} Wdh` : ''}</span></button>
           <button class="schalter${u.aktiv ? ' an' : ''}" data-n="${esc(u.name)}" aria-label="${esc(u.name)} aktiv"></button></div>`).join('');
     }).join('') || '<div class="pr-leer">Noch keine Geräte angelegt.</div>';
     box.querySelectorAll('.vw-main').forEach(b => b.onclick = () => bearbeiteGeraet(alleGeraete.find(u => u.name === b.dataset.n)));
@@ -1519,7 +1686,7 @@
 
   function bearbeiteGeraet(u) {
     const neu = !u;
-    u = u || { name: '', schritt: 5, start: 20, aktiv: true, einheit: 'kg', gruppe: 'Torso' };
+    u = u || { name: '', schritt: 5, start: 20, aktiv: true, einheit: 'kg', gruppe: 'Torso', zielWdh: 10 };
     const sheet = document.createElement('div');
     sheet.id = 'sheet';
     sheet.style.zIndex = 66;
@@ -1530,6 +1697,7 @@
         <label>Einheit<select name="einheit"><option value="kg"${u.einheit === 'kg' ? ' selected' : ''}>kg × Wdh</option><option value="min"${u.einheit === 'min' ? ' selected' : ''}>Minuten</option></select></label>
         <label>Schritt<input name="schritt" inputmode="decimal" value="${String(u.schritt).replace('.', ',')}"></label>
         <label>Startwert<input name="start" inputmode="decimal" value="${String(u.start).replace('.', ',')}"></label>
+        <label class="breit">Ziel-Wiederholungen pro Satz<input name="zielWdh" inputmode="numeric" value="${u.zielWdh || 10}"></label>
         ${neu ? '' : '<div class="breit" style="grid-column:1/-1;font-size:12px;color:var(--dim)">Beim Umbenennen wandert der bisherige Verlauf mit.</div>'}
         <div class="sheet-btns"><button type="button" class="btn" id="gfAbbr">Abbrechen</button><button class="btn primaer">Speichern</button></div>
       </form></div>`;
@@ -1542,7 +1710,7 @@
       const f = new FormData(ev.target);
       const zahl = k => Number(String(f.get(k)).replace(',', '.'));
       const daten = { name: String(f.get('name')).trim(), gruppe: f.get('gruppe'), einheit: f.get('einheit'),
-        schritt: zahl('schritt'), start: zahl('start'), aktiv: u.aktiv, alterName: neu ? undefined : u.name };
+        schritt: zahl('schritt'), start: zahl('start'), zielWdh: zahl('zielWdh'), aktiv: u.aktiv, alterName: neu ? undefined : u.name };
       try {
         renderVerwaltung(await api('uebungen', daten));
         vib(12); zu(); toast(neu ? 'Gerät angelegt' : 'Gespeichert');

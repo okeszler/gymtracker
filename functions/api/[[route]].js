@@ -7,7 +7,7 @@
  *   GET  /api/verlauf?person=…&uebung=…  Verlauf eines Geräts pro Trainingstag
  *   GET  /api/uebersicht?person=…        Kennzahlen, Kalender, Gruppen, Wochen, Rekorde
  *   GET  /api/uebungen                   alle Geräte (auch inaktive)
- *   POST /api/uebungen                   { alterName?, name, schritt, start, aktiv, einheit, gruppe }
+ *   POST /api/uebungen                   { alterName?, name, schritt, start, aktiv, einheit, gruppe, zielWdh }
  */
 
 const TZ = 'Europe/Vienna';
@@ -47,7 +47,7 @@ function pruefePerson(person) {
 }
 
 async function leseUebungen(db) {
-  const { results } = await db.prepare('SELECT name, schritt, start, aktiv, einheit, gruppe FROM uebungen ORDER BY rowid').all();
+  const { results } = await db.prepare('SELECT name, schritt, start, aktiv, einheit, gruppe, ziel_wdh FROM uebungen ORDER BY rowid').all();
   return results.map(r => ({
     name: r.name,
     schritt: r.schritt > 0 ? r.schritt : 2.5,
@@ -55,6 +55,7 @@ async function leseUebungen(db) {
     aktiv: !!r.aktiv,
     einheit: r.einheit === 'min' ? 'min' : 'kg',
     gruppe: GRUPPEN.includes(r.gruppe) ? r.gruppe : 'Sonstiges',
+    zielWdh: r.ziel_wdh >= 1 ? r.ziel_wdh : 10,
   }));
 }
 
@@ -77,16 +78,26 @@ async function initDaten(db, person) {
   const [uebungen, log] = await Promise.all([leseUebungen(db), leseLog(db, person)]);
   const heuteTag = tagVon(Date.now());
 
+  const einheit = Object.fromEntries(uebungen.map(u => [u.name, u.einheit]));
   const stat = {};
+  const proTag = {};   // Tag → { saetze, volumen, von, bis } für den Vergleich beim Abschluss
   for (const e of log) {
-    const s = stat[e.uebung] || (stat[e.uebung] = { letztes: null, best: 0, vorherTag: null, vorher: [] });
+    const s = stat[e.uebung] || (stat[e.uebung] = { letztes: null, best: 0, sessions: [] });
     s.letztes = { gewicht: e.gewicht, wdh: e.wdh, tag: e.tag };
     if (e.tag < heuteTag) {
       if (e.gewicht > s.best) s.best = e.gewicht;
-      if (s.vorherTag !== e.tag) { s.vorherTag = e.tag; s.vorher = []; }
-      s.vorher.push({ gewicht: e.gewicht, wdh: e.wdh });
+      const letzte = s.sessions[s.sessions.length - 1];
+      if (!letzte || letzte.tag !== e.tag) s.sessions.push({ tag: e.tag, saetze: [{ gewicht: e.gewicht, wdh: e.wdh }] });
+      else letzte.saetze.push({ gewicht: e.gewicht, wdh: e.wdh });
+
+      const t = proTag[e.tag] || (proTag[e.tag] = { tag: e.tag, saetze: 0, volumen: 0, von: e.ms, bis: e.ms });
+      t.saetze++;
+      if (einheit[e.uebung] !== 'min') t.volumen += e.gewicht * e.wdh;
+      t.bis = e.ms;
     }
   }
+  const tage = Object.keys(proTag).sort();
+  const letzterTag = tage.length ? proTag[tage[tage.length - 1]] : null;
 
   return {
     person,
@@ -94,12 +105,17 @@ async function initDaten(db, person) {
     uebungen: uebungen.filter(u => u.aktiv).map(u => {
       const s = stat[u.name];
       return {
-        name: u.name, schritt: u.schritt, start: u.start, einheit: u.einheit, gruppe: u.gruppe,
+        name: u.name, schritt: u.schritt, start: u.start, einheit: u.einheit, gruppe: u.gruppe, zielWdh: u.zielWdh,
         letztes: s ? s.letztes : null,
         best: s ? s.best : 0, // Bestwert vor heute (Basis für die Rekord-Erkennung)
-        vorher: s && s.vorherTag ? { tag: s.vorherTag, saetze: s.vorher } : null,
+        vorher: s && s.sessions.length ? s.sessions[s.sessions.length - 1] : null,   // letztes Training vor heute
+        davor: s && s.sessions.length > 1 ? s.sessions[s.sessions.length - 2] : null, // das Training davor
       };
     }),
+    letztesTraining: letzterTag && {
+      tag: letzterTag.tag, saetze: letzterTag.saetze, volumen: Math.round(letzterTag.volumen),
+      minuten: Math.round((letzterTag.bis - letzterTag.von) / 60000),
+    },
     heute: log.filter(e => e.tag === heuteTag).map(e => ({
       dbId: e.id, id: e.clientId, ms: e.ms, zeit: zeitVon(e.ms), uebung: e.uebung, gewicht: e.gewicht, wdh: e.wdh,
     })),
@@ -257,24 +273,26 @@ async function speichereUebung(db, body) {
   const einheit = body.einheit === 'min' ? 'min' : 'kg';
   const gruppe = GRUPPEN.includes(body.gruppe) ? body.gruppe : 'Sonstiges';
   const aktiv = body.aktiv === false ? 0 : 1;
+  const zielWdh = body.zielWdh === undefined ? 10 : Math.round(Number(body.zielWdh));
   if (!name || name.length > 60) throw new Ungueltig('Ungültig: Name fehlt oder ist zu lang.');
+  if (!(zielWdh >= 1 && zielWdh <= 100)) throw new Ungueltig('Ungültig: Ziel-Wiederholungen zwischen 1 und 100.');
   if (!(schritt > 0 && schritt <= 100) || !(start >= 0 && start <= 2000)) throw new Ungueltig('Ungültig: Schritt oder Startwert.');
 
   const vorhanden = await db.prepare('SELECT name FROM uebungen WHERE name = ?').bind(name).first();
   if (alterName && alterName !== name) {
     if (vorhanden) throw new Ungueltig(`Ungültig: "${name}" gibt es schon.`);
     await db.batch([
-      db.prepare('UPDATE uebungen SET name = ?, schritt = ?, start = ?, aktiv = ?, einheit = ?, gruppe = ? WHERE name = ?')
-        .bind(name, schritt, start, aktiv, einheit, gruppe, alterName),
+      db.prepare('UPDATE uebungen SET name = ?, schritt = ?, start = ?, aktiv = ?, einheit = ?, gruppe = ?, ziel_wdh = ? WHERE name = ?')
+        .bind(name, schritt, start, aktiv, einheit, gruppe, zielWdh, alterName),
       db.prepare('UPDATE log SET uebung = ? WHERE uebung = ?').bind(name, alterName),
     ]);
   } else if (alterName || vorhanden) {
     if (!alterName && vorhanden) throw new Ungueltig(`Ungültig: "${name}" gibt es schon.`);
-    await db.prepare('UPDATE uebungen SET schritt = ?, start = ?, aktiv = ?, einheit = ?, gruppe = ? WHERE name = ?')
-      .bind(schritt, start, aktiv, einheit, gruppe, name).run();
+    await db.prepare('UPDATE uebungen SET schritt = ?, start = ?, aktiv = ?, einheit = ?, gruppe = ?, ziel_wdh = ? WHERE name = ?')
+      .bind(schritt, start, aktiv, einheit, gruppe, zielWdh, name).run();
   } else {
-    await db.prepare('INSERT INTO uebungen (name, schritt, start, aktiv, einheit, gruppe) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(name, schritt, start, aktiv, einheit, gruppe).run();
+    await db.prepare('INSERT INTO uebungen (name, schritt, start, aktiv, einheit, gruppe, ziel_wdh) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(name, schritt, start, aktiv, einheit, gruppe, zielWdh).run();
   }
   return leseUebungen(db);
 }

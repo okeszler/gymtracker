@@ -20,8 +20,14 @@ wrangler.toml           ← Projekt- und D1-Konfiguration
 - **Training**: Geräte nach Muskelgruppe, letzter Satz + „vor X Tagen", Häkchen/Satzzahl für heute,
   Live-Karte fürs heutige Training (Geräte, Sätze, Volumen, Dauer).
 - **Satz erfassen**: große Anzeige, ± Schritte (gedrückt halten = schnell zählen), Zahl antippen zum
-  direkten Eingeben, Sätze des letzten Trainings, Steigerungs-Tipp (alle Sätze ≥ 12 Wdh → mehr Gewicht),
-  Schutz gegen Doppel-Tipp.
+  direkten Eingeben, Sätze des letzten Trainings, Schutz gegen Doppel-Tipp.
+- **Steigerungs-Tipp**: zweimal in Folge mind. 2 Sätze mit dem Top-Gewicht auf Ziel-Wiederholungen
+  (Standard 10, pro Gerät einstellbar) → Vorschlag „+1 Schritt". Nach dem ersten sauberen Training ein Hinweis,
+  was noch fehlt. Nur aus Trainings der letzten 3 Wochen.
+- **Comeback-Modus**: nach 3+ Wochen Pause an einem Gerät startet es automatisch 10 % leichter, nach 6+ Wochen
+  20 % (ein Tipp stellt das alte Gewicht wieder her).
+- **Training abschließen**: Zusammenfassung mit Volumen, Dauer, Sätzen und Geräten im Vergleich zum letzten
+  Training, Rekorden und Entwicklung pro Gerät.
 - **Pausen-Timer** nach jedem Satz (±15 s, wird gemerkt), mit Vibration und Ton.
 - **Rekord-Animation** bei neuem Bestgewicht.
 - **Offline-fest**: Sätze werden sofort lokal gespeichert und nachgereicht (Client-ID verhindert Duplikate);
@@ -45,4 +51,4 @@ Neue Datei in `migrations/` anlegen und gegen die Produktion ausführen:
 npx wrangler d1 execute gymtracker-db --remote --file migrations/000X_name.sql
 ```
 
-`0001_client_id.sql` ist bereits angewendet.
+`0001_client_id.sql` und `0002_ziel_wdh.sql` sind bereits angewendet.

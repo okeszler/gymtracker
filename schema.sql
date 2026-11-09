@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS uebungen (
   start    REAL NOT NULL,
   aktiv    INTEGER NOT NULL DEFAULT 1,
   einheit  TEXT NOT NULL DEFAULT 'kg',        -- 'kg' | 'min'
-  gruppe   TEXT NOT NULL DEFAULT 'Sonstiges'  -- Beine | Torso | Arme | Cardio | Sonstiges
+  gruppe   TEXT NOT NULL DEFAULT 'Sonstiges', -- Beine | Torso | Arme | Cardio | Sonstiges
+  ziel_wdh INTEGER NOT NULL DEFAULT 10        -- Ziel-Wiederholungen für den Steigerungs-Tipp
 );
 
 CREATE TABLE IF NOT EXISTS log (
